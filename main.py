@@ -9,40 +9,31 @@ def start():
     filename = 'parent_knowledge.pkl'
 
     if os.path.exists(filename):
-        print('Loading start knowledge from file...')
+        if input('Load saved knowledge? ') == 'y':
         
-        with open(filename, 'rb') as f:
-            parent.knowledge = pickle.load(f)
-        
-        print('Loaded start data (' + str(len(parent.knowledge)) + ')')
-
-    else:
-        print('Generate start knowledge...')
-
-        with open(filename, 'wb') as f:
-            parent.generate_knowledge([[0, 0, 0], [0, 0, 0], [0, 0, 0]], 1)
-            pickle.dump(parent.knowledge, f, pickle.HIGHEST_PROTOCOL)
-
-        print('Generated start knowledge')
-    
+            with open(filename, 'rb') as f:
+                parent.knowledge = pickle.load(f)
+            
+            print('Loaded start data (' + str(len(parent.knowledge)) + ')')
 
     while True:
-
-        size = int(input('Size: '))
+        
+        size = int(input('Board size: '))
+        population = int(input('Populations: '))
         generations = int(input('Generations: '))
 
         for g in range(0, generations):
             children = []
 
-            for i in range(0, size):
+            for i in range(0, population):
                 child = Bot(copy.deepcopy(parent.knowledge), i)
                 child.mutate_knowledge(0.5)
 
                 children.append(Child(child))
 
-            for a in range(0, size):
-                for b in range(0, size):
-                    winner, winner_boards, loser_boards = simulate_game(children[a].bot, children[b].bot, False)
+            for a in range(0, population):
+                for b in range(0, population):
+                    winner, winner_boards, loser_boards = simulate_game(children[a].bot, children[b].bot, size, False)
 
                     #Not draw
                     if winner != None:
@@ -59,16 +50,23 @@ def start():
                             for i in range(0, len(loser_boards)):
                                 parent.update_knowledge(loser_boards[i], -1)
             
-            print('[' + str(g) + '] Done')
+            print('[' + str(g) + '] Done (' + str(len(parent.knowledge)) + ')')
+
 
         if input('Play against current generation? ') ==  'y':
             if input('Go first? ') == 'y':
-                play_game(parent, True)
+                play_game(parent, size, True)
             else:
-                play_game(parent, False)
+                play_game(parent, size, False)
 
         if input('View current generation? ') == 'y':
-            simulate_game(parent, parent, True)
+            simulate_game(parent, parent, size, True)
+
+        if input('Save knowledge? ') == 'y':
+            with open(filename, 'wb') as f:
+                pickle.dump(parent.knowledge, f, pickle.HIGHEST_PROTOCOL)
+            
+            print('Saved knowledge')
 
 class Child:
     def __init__(self, bot):

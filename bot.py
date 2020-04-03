@@ -8,11 +8,16 @@ class Bot:
 
     def update_knowledge(self, board, delta):
         known, r_board, turns = self.is_board_known(self.deserialize(board))
-        self.knowledge[self.serialize(r_board)] += delta
+        
+        if known == True:
+            self.knowledge[self.serialize(r_board)] += delta
+
+        else:
+            self.knowledge[self.serialize(r_board)] = delta
 
     def generate_knowledge(self, board, mark):
 
-        for a in range(0, 9):
+        for a in range(0, len(board)):
             x = math.floor(a / 3)
             y = a - 3 * math.floor(a /   3)
             
@@ -33,29 +38,40 @@ class Bot:
 
     def play(self, board, mark):
 
+        boards = []
+
         best_board = None
         rating = 0
 
-        for i in range(0, 9):
-            a = math.floor(i / 3)
-            b = i - 3 * math.floor(i / 3)
+        size = int(math.pow(len(board), 2))
+        
+        for i in range(0, size):
+            a = math.floor(i / len(board))
+            b = i - len(board) * math.floor(i / len(board))
 
             if board[a][b] == 0:
                 board[a][b] = mark
 
                 known, r_board, r = self.is_board_known(board)
 
-                if best_board == None:
-                    best_board = copy.deepcopy(board)
-                    rating = copy.deepcopy(self.knowledge[self.serialize(r_board)])
-                
-                else:
-                    if self.knowledge[self.serialize(r_board)] > rating:
+                if known == True:
+                    if best_board == None:
+                        best_board = copy.deepcopy(board)
+                        rating = copy.deepcopy(self.knowledge[self.serialize(r_board)])
+                    
+                    elif self.knowledge[self.serialize(r_board)] > rating:
                         best_board = copy.deepcopy(board)
                         rating = copy.deepcopy(self.knowledge[self.serialize(r_board)])
                 
+                elif known == False:
+                    boards.append(copy.deepcopy(board))
+                
                 board[a][b] = 0
-        
+
+        if len(boards) > 0:
+            if best_board == None or rating < 1:
+                best_board = random.choice(boards)
+
         return best_board
 
     def is_board_known(self, board):
@@ -71,12 +87,7 @@ class Bot:
         return False, board, 0
 
     def rotate_board(self, board):
-
-        top_row = [board[0][2], board[1][2], board[2][2]]
-        mid_row = [board[0][1], board[1][1], board[2][1]]
-        bot_row = [board[0][0], board[1][0], board[2][0]]
-        
-        return [top_row, mid_row, bot_row]
+        return list(zip(*reversed(board)))
 
     def add(self, board, solution):
         self.knowledge[self.serialize(board)] = solution
@@ -88,12 +99,11 @@ class Bot:
             
             self.knowledge[board] = random.randint(-10, 10)
 
-
     def serialize(self, board):
         data = ''
 
-        for a in range(0, 3):
-            for b in range(0, 3):
+        for a in range(0, len(board)):
+            for b in range(0, len(board)):
                 data += str(board[a][b])
         
         return data
@@ -101,10 +111,10 @@ class Bot:
     def deserialize(self, board):
         data = []
 
-        for a in range(0, 3):
+        for a in range(0, int(math.pow(len(board), 0.5))):
             row = []
-            for b in range(0, 3):
-                row.append(int(board[a * 3 + b]))
+            for b in range(0, int(math.pow(len(board), 0.5))):
+                row.append(int(board[a * int(math.pow(len(board), 0.5)) + b]))
 
             data.append(row)
 
